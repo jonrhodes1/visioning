@@ -1657,11 +1657,12 @@ function renderTimeline() {
   const obstacles = tl.obstacles;
   const actions = tl.actions;
 
+  const timeOrder = tp => { const t = timePoints.find(x => x.value === tp); return t ? t.order : 99; };
   const allItems = [
     ...targets.map((t, i) => ({ ...t, type: 'target', typeIdx: i })),
     ...obstacles.map((t, i) => ({ ...t, type: 'obstacle', typeIdx: i })),
     ...actions.map((t, i) => ({ ...t, type: 'action', typeIdx: i }))
-  ];
+  ].sort((a, b) => timeOrder(a.time) - timeOrder(b.time));
 
   const itemsHtml = allItems.length > 0 ? allItems.map(item => `
     <div class="timeline-item ${item.type}-item">
