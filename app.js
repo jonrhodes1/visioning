@@ -368,7 +368,7 @@ function buildDial(viStd, siStd, sortedStd) {
   return `
   <div class="sort-dial-wrap">
     <div class="sort-dial-title">Value Balance</div>
-    <svg viewBox="0 0 200 120" class="sort-dial-svg" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 200 132" class="sort-dial-svg" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="dialTrackGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%"   stop-color="#FF5500" stop-opacity="${viAlpha.toFixed(2)}"/>
@@ -420,24 +420,18 @@ function buildDial(viStd, siStd, sortedStd) {
       <circle cx="${cx}" cy="${cy}" r="5.5" fill="#FFFFFF"/>
       <circle cx="${cx}" cy="${cy}" r="2"   fill="#FF5500"/>
 
-      <!-- VI count (left) -->
-      <text x="30" y="80" font-family="Inter,system-ui,sans-serif" font-size="20"
+      <!-- Counts: below arc endpoints, above bottom labels -->
+      <text x="22" y="116" font-family="Inter,system-ui,sans-serif" font-size="20"
             font-weight="900" fill="#FF5500" text-anchor="middle">${viStd}</text>
-      <text x="30" y="92" font-family="Inter,system-ui,sans-serif" font-size="8"
-            font-weight="800" letter-spacing="1.5" fill="#8A8278" text-anchor="middle">VI</text>
-
-      <!-- SI count (right) -->
-      <text x="170" y="80" font-family="Inter,system-ui,sans-serif" font-size="20"
+      <text x="178" y="116" font-family="Inter,system-ui,sans-serif" font-size="20"
             font-weight="900" fill="#FF5500" text-anchor="middle">${siStd}</text>
-      <text x="170" y="92" font-family="Inter,system-ui,sans-serif" font-size="8"
-            font-weight="800" letter-spacing="1.5" fill="#8A8278" text-anchor="middle">SI</text>
 
       <!-- Bottom labels -->
-      <text x="6"   y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+      <text x="6"   y="129" font-family="Inter,system-ui,sans-serif" font-size="8"
             font-weight="700" letter-spacing="0.5" fill="#C8C2B5" text-anchor="start">VERY</text>
-      <text x="${cx}" y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+      <text x="${cx}" y="129" font-family="Inter,system-ui,sans-serif" font-size="8"
             fill="#C8C2B5" text-anchor="middle">~24 each</text>
-      <text x="194" y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+      <text x="194" y="129" font-family="Inter,system-ui,sans-serif" font-size="8"
             font-weight="700" letter-spacing="0.5" fill="#C8C2B5" text-anchor="end">SOMEWHAT</text>
     </svg>
   </div>`;
