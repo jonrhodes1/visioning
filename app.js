@@ -355,6 +355,94 @@ function getCustomValueTitle(idx) {
   return cv && cv.title.trim() ? cv.title.trim() : null;
 }
 
+function buildDial(viStd, siStd, sortedStd) {
+  const ratio   = sortedStd > 0 ? siStd / sortedStd : 0.5;
+  const angle   = Math.round((ratio - 0.5) * 160); // -80 (all VI) → 0 (balanced) → +80 (all SI)
+  const cx = 100, cy = 102, R = 82;
+
+  // Coloured arc segment — highlight the side that's heavier
+  // We draw two half-arcs: left (VI) and right (SI), tinting the heavier one
+  const viAlpha = sortedStd > 0 ? Math.min(0.9, 0.2 + (viStd / Math.max(sortedStd,1)) * 0.8) : 0.35;
+  const siAlpha = sortedStd > 0 ? Math.min(0.9, 0.2 + (siStd / Math.max(sortedStd,1)) * 0.8) : 0.35;
+
+  return `
+  <div class="sort-dial-wrap">
+    <div class="sort-dial-title">Value Balance</div>
+    <svg viewBox="0 0 200 120" class="sort-dial-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="dialTrackGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#FF5500" stop-opacity="${viAlpha.toFixed(2)}"/>
+          <stop offset="44%"  stop-color="#E8E4DE" stop-opacity="1"/>
+          <stop offset="56%"  stop-color="#E8E4DE" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#FF5500" stop-opacity="${siAlpha.toFixed(2)}"/>
+        </linearGradient>
+        <filter id="needleGlow">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Track: grey base -->
+      <path d="M ${cx-R} ${cy} A ${R} ${R} 0 0 1 ${cx+R} ${cy}"
+            fill="none" stroke="#E0DBD2" stroke-width="14" stroke-linecap="round"/>
+
+      <!-- Track: gradient overlay (weighted sides) -->
+      <path d="M ${cx-R} ${cy} A ${R} ${R} 0 0 1 ${cx+R} ${cy}"
+            fill="none" stroke="url(#dialTrackGrad)" stroke-width="14" stroke-linecap="round"/>
+
+      <!-- Tick marks: extremes -->
+      <circle cx="${cx-R+3}" cy="${cy}" r="3.5" fill="#FF5500" opacity="0.25"/>
+      <circle cx="${cx+R-3}" cy="${cy}" r="3.5" fill="#FF5500" opacity="0.25"/>
+
+      <!-- Tick mark: balanced (12 o'clock on arc) -->
+      <line x1="${cx}" y1="${cy-R-7}" x2="${cx}" y2="${cy-R+5}"
+            stroke="#B8B2A8" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Needle -->
+      <g transform="rotate(${angle}, ${cx}, ${cy})">
+        <animateTransform attributeName="transform" type="rotate"
+          from="0 ${cx} ${cy}" to="${angle} ${cx} ${cy}"
+          dur="0.65s" calcMode="spline"
+          keyTimes="0;1" keySplines="0.34 1.56 0.64 1"
+          fill="freeze"/>
+        <!-- Shadow -->
+        <line x1="${cx}" y1="${cy-4}" x2="${cx}" y2="${cy-66}"
+              stroke="#FF5500" stroke-width="6" stroke-linecap="round" opacity="0.12"/>
+        <!-- Needle body -->
+        <line x1="${cx}" y1="${cy-4}" x2="${cx}" y2="${cy-68}"
+              stroke="#FF5500" stroke-width="3" stroke-linecap="round" filter="url(#needleGlow)"/>
+        <!-- Tip dot -->
+        <circle cx="${cx}" cy="${cy-68}" r="4" fill="#FF5500"/>
+      </g>
+
+      <!-- Hub ring -->
+      <circle cx="${cx}" cy="${cy}" r="10" fill="#FF5500"/>
+      <circle cx="${cx}" cy="${cy}" r="5.5" fill="#FFFFFF"/>
+      <circle cx="${cx}" cy="${cy}" r="2"   fill="#FF5500"/>
+
+      <!-- VI count (left) -->
+      <text x="30" y="80" font-family="Inter,system-ui,sans-serif" font-size="20"
+            font-weight="900" fill="#FF5500" text-anchor="middle">${viStd}</text>
+      <text x="30" y="92" font-family="Inter,system-ui,sans-serif" font-size="8"
+            font-weight="800" letter-spacing="1.5" fill="#8A8278" text-anchor="middle">VI</text>
+
+      <!-- SI count (right) -->
+      <text x="170" y="80" font-family="Inter,system-ui,sans-serif" font-size="20"
+            font-weight="900" fill="#FF5500" text-anchor="middle">${siStd}</text>
+      <text x="170" y="92" font-family="Inter,system-ui,sans-serif" font-size="8"
+            font-weight="800" letter-spacing="1.5" fill="#8A8278" text-anchor="middle">SI</text>
+
+      <!-- Bottom labels -->
+      <text x="6"   y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+            font-weight="700" letter-spacing="0.5" fill="#C8C2B5" text-anchor="start">VERY</text>
+      <text x="${cx}" y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+            fill="#C8C2B5" text-anchor="middle">~24 each</text>
+      <text x="194" y="117" font-family="Inter,system-ui,sans-serif" font-size="8"
+            font-weight="700" letter-spacing="0.5" fill="#C8C2B5" text-anchor="end">SOMEWHAT</text>
+    </svg>
+  </div>`;
+}
+
 function renderValuesSort() {
   const vi = visioningState.valuesSort.veryImportant;
   const si = visioningState.valuesSort.somewhatImportant;
@@ -436,10 +524,7 @@ function renderValuesSort() {
   const diff = Math.abs(viStd - siStd);
   const WARN_THRESHOLD = 8;
   const isUneven = allSorted && diff > WARN_THRESHOLD;
-  // Balance bar widths (of sorted values only)
   const sortedStd = viStd + siStd;
-  const viPct  = sortedStd > 0 ? Math.round((viStd / sortedStd) * 100) : 0;
-  const siPct  = sortedStd > 0 ? (100 - viPct) : 0;
 
   return `
   <div>
@@ -460,19 +545,8 @@ function renderValuesSort() {
       </div>
     </div>
 
-    <!-- BALANCE INDICATOR -->
-    <div class="sort-balance-row" style="margin-bottom:20px;">
-      <div class="sort-balance-label">
-        <span style="color:var(--accent);font-weight:700;">VI ${viStd}</span>
-        <span style="color:var(--t3);font-size:0.75rem;">balance</span>
-        <span style="font-weight:700;">SI ${siStd}</span>
-      </div>
-      <div class="sort-balance-bar">
-        <div class="sort-balance-vi" style="width:${viPct}%"></div>
-        <div class="sort-balance-si" style="width:${siPct}%"></div>
-      </div>
-      <div class="sort-balance-hint">Target: ~24 each</div>
-    </div>
+    <!-- BALANCE DIAL -->
+    ${buildDial(viStd, siStd, sortedStd)}
 
     <div class="sort-layout">
       <!-- UNSORTED COLUMN -->
@@ -498,7 +572,7 @@ function renderValuesSort() {
         </div>
         <div class="sort-col-si">
           <div class="sort-column-header">
-            <span class="sort-column-title">Somewhat Important</span>
+            <span class="sort-column-title" style="color:var(--accent);">Somewhat Important</span>
             <span class="sort-count">${si.length}</span>
           </div>
           ${siHtml}
